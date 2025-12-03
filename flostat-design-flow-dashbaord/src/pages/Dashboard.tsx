@@ -173,6 +173,7 @@ export default function Dashboard() {
       try {
         // Fetch devices
         const deviceRes = await getDeviceWithStatus(org_id, token);
+        console.log("Device result get: ",deviceRes);
         if (deviceRes) {
           dispatch(setDevices(deviceRes));
           dispatch(setDevicesObject(deviceRes));
