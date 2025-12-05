@@ -38,6 +38,7 @@ import PrivateRoute from "./components/auth/ProtectedRoute.tsx";
 import CompleteProfile from "./pages/CompleteProfile.tsx";
 import { useIsMobile } from "./hooks/use-mobile";
 import { useSelector } from "react-redux";
+import { getFcmToken, onMessageListener } from "./firebase.ts";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,27 @@ function AppShell() {
   // console.log("Component in app: ", components)
   const { topics} = useSelector((state: RootState)=> state.org);
   // console.log("Topics : ",topics)
+  
+  useEffect(() => {
+    // Step 1: Request permission and get user token
+    getFcmToken().then(token => {
+      console.log("📌 FCM Token:", token);
+    });
+
+    // Step 2: Foreground notification handler
+    onMessageListener().then(payload => {
+      console.log("📩 Foreground message:", payload);
+
+      if (payload?.notification) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(payload.notification.title, {
+            body: payload.notification.body,
+            icon: payload.notification.icon || "/logo192.png"
+          });
+        });
+      }
+    });
+  }, []);
   const shelllessRoutes = [
     "/",
     "/signin",
@@ -74,6 +96,7 @@ function AppShell() {
   // if (!isAuthenticated && !shelllessRoutes.includes(location.pathname as any)) {
   //   return <Navigate to="/" replace />;
   // }
+
 
 
   if (isShellless) {

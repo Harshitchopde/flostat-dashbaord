@@ -430,7 +430,7 @@ export default function Dashboard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Device</TableHead>
+                <TableHead>Device</TableHead>``
                 <TableHead>Action</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Time</TableHead>
@@ -454,7 +454,7 @@ export default function Dashboard() {
                       : "Info";
 
                   return (
-                    <TableRow key={log.uuid}>
+                   <TableRow key={`${log.uuid}-${log.last_updated || log.updated_at}`}>
                       <TableCell>
                         <div className="font-medium capitalize">
                           {devicesObject[log.device_id]}

@@ -53,7 +53,7 @@ export const createSchedule = async (
   } catch (error: any) {
     console.error("Error in createSchedule:", error);
     if (error?.response?.status === 409) {
-      toast.error("Schedule conflict: A schedule already exists for this time range.");
+      toast.error(("Schedule conflict: "+error?.response?.data?.message )|| "Schedule conflict: A schedule already exists for this time range.");
     } else {
       console.log("Show toast")
       toast.error(
