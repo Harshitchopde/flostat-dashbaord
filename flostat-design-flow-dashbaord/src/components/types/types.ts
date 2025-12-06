@@ -67,6 +67,19 @@ export interface BlockModePayload {
   mode: string;
 }
 
+export interface Report {
+  uuid: string;
+  device_type: string;
+  status: string | null;
+  level: string | null;
+  lastUpdated: string;
+  timestamp: number;
+  updatedBy: string;
+  device_id?: string;
+  device_name?: string;
+   [key: string]: any;
+}
+
 export interface GoogleOuthResponse {
   user?: any;
   navigateTo: string;

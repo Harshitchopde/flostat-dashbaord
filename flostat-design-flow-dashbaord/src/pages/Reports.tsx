@@ -24,16 +24,12 @@ import { Download } from "lucide-react";
 import { apiService } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { generateDeviceReportPDF } from "@/utils/exportUtils";
+import { Report } from "@/components/types/types";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
-interface Report {
-  id: string;
-  deviceType: string;
-  status: string | null;
-  level: string | null;
-  lastUpdated: string;
-  timestamp: number;
-  updatedBy: string;
-}
+
 
 interface TankDevice {
   device_id: string;
@@ -46,6 +42,7 @@ interface TankDevice {
 export default function Reports() {
   const { authToken, organizations } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
+  const { devicesObject} = useSelector((state: RootState)=> state.device);
   const [loading, setLoading] = useState(false);
   const [tankDevices, setTankDevices] = useState<TankDevice[]>([]);
   const [selectedTank, setSelectedTank] = useState<string>("no-tanks");
@@ -177,21 +174,22 @@ export default function Reports() {
 
       // Sort logs by date (newest first)
       uniqueLogs.sort((a: any, b: any) => {
-        return new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime();
+        return (new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) || (new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime());
       });
 
       console.log("Extracted unique logs:", JSON.stringify(uniqueLogs, null, 2));
 
       const transformedReports: Report[] = uniqueLogs.map((log: any) => ({
-        id: log.device_id || log.id || log.uuid || "Unknown",
-        deviceType: log.device_type || "Unknown",
+        uuid: log.uuid || "Unknown",
+        device_name: devicesObject[log?.device_id],
+        device_type: log.device_type || "Unknown",
         status: log.status !== undefined ? log.status : null,
         level: log.current_level ? `${log.current_level}%` : (log.level !== undefined ? log.level : null),
         lastUpdated: log.last_updated ? new Date(log.last_updated).toLocaleString() : "Unknown",
-        timestamp: log.last_updated ? new Date(log.last_updated).getTime() : 0,
+        timestamp: log.timestamp || log.last_updated ? new Date(log.last_updated).getTime() : 0,
         updatedBy: log.updated_by || log.email || "System"
       }));
-
+      console.warn(transformedReports);
       setReports(transformedReports);
 
       if (uniqueLogs.length === 0) {
@@ -235,62 +233,71 @@ export default function Reports() {
     await fetchReports();
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      const jsPDF = (await import('jspdf')).default;
-      const autoTable = (await import('jspdf-autotable')).default;
+  const handleDownloadPDF = ()=>{
+    generateDeviceReportPDF({
+    logs: reports,
+    selectedDate,
+    tankDevices,
+    selectedTank
+  });
+  }
 
-      const doc = new jsPDF();
+  // const handleDownloadPDF = async () => {
+  //   try {
+  //     const jsPDF = (await import('jspdf')).default;
+  //     const autoTable = (await import('jspdf-autotable')).default;
 
-      const selectedTankObj = tankDevices.find(t => t.device_id === selectedTank);
-      const tankName = selectedTankObj ? `${selectedTankObj.device_name} (${selectedTankObj.org_name})` : 'Unknown Tank';
+  //     const doc = new jsPDF();
 
-      doc.setFontSize(18);
-      doc.text('Device Reports', 14, 20);
+  //     const selectedTankObj = tankDevices.find(t => t.device_id === selectedTank);
+  //     const tankName = selectedTankObj ? `${selectedTankObj.device_name} (${selectedTankObj.org_name})` : 'Unknown Tank';
 
-      doc.setFontSize(11);
-      doc.text(`Tank: ${tankName}`, 14, 30);
-      doc.text(`Date: ${selectedDate}`, 14, 37);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
-      doc.text(`Total Records: ${filteredReports.length}`, 14, 51);
+  //     doc.setFontSize(18);
+  //     doc.text('Device Reports', 14, 20);
 
-      const tableData = filteredReports.map(report => [
-        report.id.substring(0, 20) + '...',
-        report.deviceType,
-        report.status || report.level || '-',
-        report.lastUpdated,
-        report.updatedBy
-      ]);
+  //     doc.setFontSize(11);
+  //     doc.text(`Tank: ${tankName}`, 14, 30);
+  //     doc.text(`Date: ${selectedDate}`, 14, 37);
+  //     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
+  //     doc.text(`Total Records: ${filteredReports.length}`, 14, 51);
 
-      autoTable(doc, {
-        startY: 58,
-        head: [['Device ID', 'Type', 'Status/Level', 'Last Updated', 'Updated By']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [0, 150, 136], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 8, cellPadding: 3 },
-        columnStyles: {
-          0: { cellWidth: 35 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 40 },
-          4: { cellWidth: 40 }
-        }
-      });
+  //     const tableData = filteredReports.map(report => [
+  //       report.id.substring(0, 20) + '...',
+  //       report.deviceType,
+  //       report.status || report.level || '-',
+  //       report.lastUpdated,
+  //       report.updatedBy
+  //     ]);
 
-      const fileName = `report_${tankName.replace(/[^a-z0-9]/gi, '_')}_${selectedDate}.pdf`;
-      doc.save(fileName);
+  //     autoTable(doc, {
+  //       startY: 58,
+  //       head: [['Device ID', 'Type', 'Status/Level', 'Last Updated', 'Updated By']],
+  //       body: tableData,
+  //       theme: 'grid',
+  //       headStyles: { fillColor: [0, 150, 136], textColor: 255, fontStyle: 'bold' },
+  //       styles: { fontSize: 8, cellPadding: 3 },
+  //       columnStyles: {
+  //         0: { cellWidth: 35 },
+  //         1: { cellWidth: 20 },
+  //         2: { cellWidth: 25 },
+  //         3: { cellWidth: 40 },
+  //         4: { cellWidth: 40 }
+  //       }
+  //     });
 
-      toast.success('PDF downloaded successfully', {
-        description: `${filteredReports.length} records exported`
-      });
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      toast.error('Failed to generate PDF', {
-        description: error.message || 'Please try again'
-      });
-    }
-  };
+  //     const fileName = `report_${tankName.replace(/[^a-z0-9]/gi, '_')}_${selectedDate}.pdf`;
+  //     doc.save(fileName);
+
+  //     toast.success('PDF downloaded successfully', {
+  //       description: `${filteredReports.length} records exported`
+  //     });
+  //   } catch (error) {
+  //     console.error('PDF generation error:', error);
+  //     toast.error('Failed to generate PDF', {
+  //       description: error.message || 'Please try again'
+  //     });
+  //   }
+  // };
 
   const levelSeries = useMemo(() => {
     const chartData: Record<string, any> = {};
@@ -310,10 +317,10 @@ export default function Reports() {
         if (report.level) {
           const levelValue = parseInt(report.level);
           if (!isNaN(levelValue)) {
-            chartData[formattedTime][report.deviceType.toLowerCase()] = levelValue;
+            chartData[formattedTime][report.device_type.toLowerCase()] = levelValue;
           }
         } else if (report.status !== null) {
-          chartData[formattedTime][report.deviceType.toLowerCase()] = report.status === 'ON' ? 1 : 0;
+          chartData[formattedTime][report.device_type.toLowerCase()] = report.status === 'ON' ? 1 : 0;
         }
       }
     });
@@ -331,7 +338,7 @@ export default function Reports() {
 
   const calculateDeviceTimeline = (deviceType: string) => {
     const deviceLogs = reports
-      .filter(r => r.deviceType.toLowerCase() === deviceType.toLowerCase())
+      .filter(r => r.device_type.toLowerCase() === deviceType.toLowerCase())
       .sort((a, b) => a.timestamp - b.timestamp);
 
     if (deviceLogs.length === 0) return [];
@@ -383,7 +390,7 @@ export default function Reports() {
 
   const filteredReports = useMemo(() => {
     if (filterDeviceType === "all") return reports;
-    return reports.filter(report => report.deviceType.toLowerCase() === filterDeviceType.toLowerCase());
+    return reports.filter(report => report.device_type.toLowerCase() === filterDeviceType.toLowerCase());
   }, [reports, filterDeviceType]);
 
   return (
@@ -484,7 +491,7 @@ export default function Reports() {
             {filteredReports.length > 0 ? (
               filteredReports.map((report, index) => (
                 <TableRow key={index} className="hover:bg-muted/20 transition-smooth">
-                  <TableCell className="font-mono text-xs text-soft">{report.id}</TableCell>
+                  <TableCell className="font-mono text-xs text-soft">{report?.device_name ||  report.device_id}</TableCell>
                   <TableCell className="space-x-1">
                     {report.status && (
                       <Badge
@@ -518,7 +525,7 @@ export default function Reports() {
 
 
       <h2 className="text-center text-sm font-semibold text-soft">Device Data Visualization</h2>
-      <Card className="rounded-lg border border-border/50 bg-card shadow-soft-lg">
+      <Card className="tank-chart rounded-lg border border-border/50 bg-card shadow-soft-lg">
         <CardHeader className="border-b bg-muted/30 py-3">
           <CardTitle className="text-sm font-medium">Water Level</CardTitle>
         </CardHeader>
@@ -567,7 +574,7 @@ export default function Reports() {
       </Card>
 
       {/* Valve State Card */}
-      <Card className="rounded-lg border border-border/50 bg-card shadow-soft-lg">
+      <Card className="valve-chart rounded-lg border border-border/50 bg-card shadow-soft-lg">
         <CardHeader className="border-b bg-muted/30 py-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">Valve State</CardTitle>
         </CardHeader>
@@ -600,7 +607,7 @@ export default function Reports() {
       </Card>
 
       {/* Pump State Card */}
-      <Card className="rounded-lg border border-border/50 bg-card shadow-soft-lg">
+      <Card className=" pump-chart chart-container rounded-lg border border-border/50 bg-card shadow-soft-lg">
         <CardHeader className="border-b bg-muted/30 py-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">Pump State</CardTitle>
         </CardHeader>
