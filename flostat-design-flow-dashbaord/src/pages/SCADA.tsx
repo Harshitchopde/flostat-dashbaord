@@ -31,7 +31,7 @@ import { apiService } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { changeMode, getBlockMode, getBlocksOfOrgId } from "@/lib/operations/blockApis";
-import { setBlockMode, setBlocks, setBlocksName } from "@/slice/orgSlice";
+import { setBlockMode, setBlocks, setBlocksName, setCurrentBlock } from "@/slice/orgSlice";
 import { AppDispatch, RootState } from "@/store";
 import ScadaFlow from "@/components/scada/ScadaFlow";
 import { stat } from "fs";
@@ -382,13 +382,13 @@ export default function SCADA() {
   const { currentOrganization, authToken } = useAuth();
   const [devices, setDevices] = useState(initialDevices);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [selectedBlocks, setSelectedBlocks] = useState<string>();
+  const { blocksName,blockModes,currentBlock, blocks } = useSelector((state: RootState) => state.org);
+  const [selectedBlocks, setSelectedBlocks] = useState<string>(currentBlock?currentBlock:"");
   // SCADA operating mode: 'auto' disables manual device interaction; 'manual' enables it.
   // const [scadaMode, setScadaMode] = useState<string>("manual");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false); // Initialize as false for manual mode
   const devicesAll = useSelector((state: RootState) => state.device.devices);
-  const { blocksName,blockModes, blocks } = useSelector((state: RootState) => state.org);
   const orgId= useSelector((state: RootState) => state.org.org_id);
   const {token}= useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
@@ -503,7 +503,10 @@ export default function SCADA() {
           <SingleBlockSelector
             availableBlocks={dummyBlocks}
             selectedBlock={selectedBlocks}
-            onBlockChange={setSelectedBlocks}
+            onBlockChange={(block)=>{
+              setSelectedBlocks(block);
+              dispatch(setCurrentBlock(block));
+            }}
             label="Block"
           />
           <div className="flex items-center gap-2">
