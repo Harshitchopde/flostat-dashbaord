@@ -1,5 +1,5 @@
 // src/services/queryService.ts
-import toast from "react-hot-toast";
+import {toast} from "sonner";
 import { querySupportEndpoints } from "../endPoints";
 import { apiClient } from "../httpClient";
 

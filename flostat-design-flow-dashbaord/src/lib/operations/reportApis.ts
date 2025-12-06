@@ -1,5 +1,5 @@
 // src/services/tankReportService.ts
-import toast from "react-hot-toast";
+import {toast} from "sonner";
 import { deviceEndpoints, reportEndpoints } from "../endPoints";
 import { apiClient } from "../httpClient";
 

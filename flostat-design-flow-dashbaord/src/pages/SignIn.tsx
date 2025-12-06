@@ -59,10 +59,10 @@ export default function SignIn() {
 
     setLoading(true);
     try {
-      const success = await login(email, password);
+      const success = await login(email, password,navigate);
       if (success) {
         toast.success("Login successful!");
-        navigate("/organizations");
+        // navigate("/organizations");
       } else {
         toast.error("Login failed. Please check your credentials.");
       }

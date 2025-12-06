@@ -28,6 +28,7 @@ import { generateDeviceReportPDF } from "@/utils/exportUtils";
 import { Report } from "@/components/types/types";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { getTankDeviceReports } from "@/lib/operations/reportApis";
 
 
 
@@ -46,6 +47,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [tankDevices, setTankDevices] = useState<TankDevice[]>([]);
   const [selectedTank, setSelectedTank] = useState<string>("no-tanks");
+  const { token} = useSelector((state: RootState)=> state.auth);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterDeviceType, setFilterDeviceType] = useState("all");
 
@@ -145,7 +147,8 @@ export default function Reports() {
       }
 
       console.log("Fetch Reports Params:", JSON.stringify(params, null, 2));
-      const response = await apiService.getTankRelatedReport(params);
+      // const response = await apiService.getTankRelatedReport(params);
+      const response = await getTankDeviceReports(params,token);
       console.log("Fetch Reports Response:", JSON.stringify(response, null, 2));
 
       if (!response) {
@@ -204,27 +207,7 @@ export default function Reports() {
 
     } catch (error) {
       console.error("Fetch reports error:", error);
-      const errorMessage = (error as Error).message;
-
-      if (errorMessage.includes("Authentication required")) {
-        toast.error("Authentication failed", {
-          description: "Your session may have expired. Please log in again.",
-        });
-      } else if (errorMessage.includes("User does not exit in this org")) {
-        toast.error("Access denied", {
-          description: "You don't have access to this organization.",
-        });
-      } else if (errorMessage.includes("Tank device not Found")) {
-        toast.error("Tank not found", {
-          description: "The selected tank device does not exist.",
-        });
-      } else {
-        toast.error("Failed to fetch reports", {
-          description: errorMessage,
-        });
-      }
       setReports([]);
-    } finally {
       setLoading(false);
     }
   };
@@ -241,63 +224,6 @@ export default function Reports() {
     selectedTank
   });
   }
-
-  // const handleDownloadPDF = async () => {
-  //   try {
-  //     const jsPDF = (await import('jspdf')).default;
-  //     const autoTable = (await import('jspdf-autotable')).default;
-
-  //     const doc = new jsPDF();
-
-  //     const selectedTankObj = tankDevices.find(t => t.device_id === selectedTank);
-  //     const tankName = selectedTankObj ? `${selectedTankObj.device_name} (${selectedTankObj.org_name})` : 'Unknown Tank';
-
-  //     doc.setFontSize(18);
-  //     doc.text('Device Reports', 14, 20);
-
-  //     doc.setFontSize(11);
-  //     doc.text(`Tank: ${tankName}`, 14, 30);
-  //     doc.text(`Date: ${selectedDate}`, 14, 37);
-  //     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
-  //     doc.text(`Total Records: ${filteredReports.length}`, 14, 51);
-
-  //     const tableData = filteredReports.map(report => [
-  //       report.id.substring(0, 20) + '...',
-  //       report.deviceType,
-  //       report.status || report.level || '-',
-  //       report.lastUpdated,
-  //       report.updatedBy
-  //     ]);
-
-  //     autoTable(doc, {
-  //       startY: 58,
-  //       head: [['Device ID', 'Type', 'Status/Level', 'Last Updated', 'Updated By']],
-  //       body: tableData,
-  //       theme: 'grid',
-  //       headStyles: { fillColor: [0, 150, 136], textColor: 255, fontStyle: 'bold' },
-  //       styles: { fontSize: 8, cellPadding: 3 },
-  //       columnStyles: {
-  //         0: { cellWidth: 35 },
-  //         1: { cellWidth: 20 },
-  //         2: { cellWidth: 25 },
-  //         3: { cellWidth: 40 },
-  //         4: { cellWidth: 40 }
-  //       }
-  //     });
-
-  //     const fileName = `report_${tankName.replace(/[^a-z0-9]/gi, '_')}_${selectedDate}.pdf`;
-  //     doc.save(fileName);
-
-  //     toast.success('PDF downloaded successfully', {
-  //       description: `${filteredReports.length} records exported`
-  //     });
-  //   } catch (error) {
-  //     console.error('PDF generation error:', error);
-  //     toast.error('Failed to generate PDF', {
-  //       description: error.message || 'Please try again'
-  //     });
-  //   }
-  // };
 
   const levelSeries = useMemo(() => {
     const chartData: Record<string, any> = {};

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Org } from '@/lib/operations/orgApis';
-import { store } from '@/store';
+import {  store } from '@/store';
 import { setUserOrgs } from '@/slice/userSlice';
 import { setToken } from '@/slice/authSlice';
 
@@ -29,7 +29,7 @@ interface SignupData {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string,navigate: any) => Promise<boolean>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('devices', JSON.stringify(updatedDevices));
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string,navigate: any): Promise<boolean> => {
     try {
       console.log("AuthContext: Attempting login with:", { email, password });
       // Call the API service to authenticate the user
@@ -189,7 +189,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch user organizations
         console.log("AuthContext: Fetching user organizations after login");
         await fetchUserOrganizations(token);
-
+            localStorage.setItem('user', JSON.stringify(userObj));
+          store.dispatch(setToken(token));
+          
+          console.log("Now navigate to org")
+          navigate("/organizations");
         return true;
       } else {
         console.error("AuthContext: Login failed with message:", response.message);

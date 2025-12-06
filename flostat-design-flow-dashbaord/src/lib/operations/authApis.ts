@@ -1,11 +1,12 @@
 // src/services/authService.ts
-import toast from "react-hot-toast";
+
 import { apiClient } from "../httpClient";
 import { authEndpoints } from "../endPoints";
 import { setSignUpData, setToken } from "@/slice/authSlice";
 import { RootState } from "@/store";
 import { AnyAction, ThunkAction } from "@reduxjs/toolkit";
 import { GoogleOuthResponse, SignUpPayload } from "@/components/types/types";
+import { toast } from "sonner";
 
 
 // ------------------ TYPES ------------------

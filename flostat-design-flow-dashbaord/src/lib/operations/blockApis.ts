@@ -1,5 +1,6 @@
 // src/services/deviceService.ts
-import toast from "react-hot-toast";
+
+import { toast } from "sonner";
 import { deviceEndpoints } from "../endPoints";
 import { apiClient } from "../httpClient";
 import { Block, BlockModePayload } from "@/components/types/types";

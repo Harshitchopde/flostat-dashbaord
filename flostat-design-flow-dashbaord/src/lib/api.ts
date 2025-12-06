@@ -185,6 +185,7 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(params),
     });
+    // console.log("")
 
     if (!response.ok) {
       throw new Error('Failed to fetch tank related report');
