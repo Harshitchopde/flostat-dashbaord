@@ -116,12 +116,12 @@ const buildStats = (sourceDevices: Device[]) => [
 ];
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { blocks, blockModes } = useSelector(
+  const { blocks,currentBlock, blockModes } = useSelector(
     (state: RootState) => state.org
   );
   const { devices, devicesObject } = useSelector((state: RootState) => state.device);
   const token = useSelector((state: RootState) => state.auth.token);
-  const [selectedBlocks, setSelectedBlocks] = useState<string[]>([]);
+  const [selectedBlocks, setSelectedBlocks] = useState<string[]>(currentBlock?[currentBlock]:[]);
 
   const [multiTypes, setMultiTypes] = useState<string[]>([]);
   const [minThreshold, setMinThreshold] = useState("");
@@ -139,7 +139,7 @@ export default function Dashboard() {
   });
   const { org_id, logs } = useSelector((state: RootState) => state.org);
   const location = useLocation();
-  // console.log("ORG LOG: ",)
+  console.log("current block ",currentBlock);
   console.log("Org id: ", org_id);
   const [search, setSearch] = useState("");
   const [collapsedSections, setCollapsedSections] = useState<
@@ -324,8 +324,9 @@ export default function Dashboard() {
               availableBlocks={blocks}
               selectedBlocks={selectedBlocks}
               onBlocksChange={(ids) => {
-                // console.log("Block: ",ids)
+                console.log("Block: ",ids)
                 setSelectedBlocks(ids);
+                dispatch(setCurrentBlock(ids[ids.length -1]));
                 //  console.log("ID: ",ids[0]);   
                 // dispatch(setCurrentBlock(block || null));
               }}
